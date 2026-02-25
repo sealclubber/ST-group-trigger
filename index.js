@@ -1,32 +1,14 @@
-import { extension_settings, getContext } from "../../../extensions.js";
-import { eventSource, event_types, saveSettingsDebounced } from "../../../../script.js";
-
-const EXTENSION_NAME = "ST-group-trigger";
-const SETTINGS = {
-  enabled: true,
-};
+import { getContext } from "../../../extensions.js";
+import { eventSource, event_types } from "../../../../script.js";
 
 const SELECTOR_CANDIDATES = [
-  "#chat_header .fa-bookmark",
-  "#chat_header .fa-users",
-  "#chat_header .fa-user",
-  "#chat_header .menu_button",
-  "#chat_header",
-  "#chat",
+  "#leftSendFormButtons",
+  "#send_form .menu_button",
+  "#send_form",
+  "#send_textarea",
 ];
 
 let cachedAutoReplyState = null;
-
-function loadSettings() {
-  extension_settings[EXTENSION_NAME] = extension_settings[EXTENSION_NAME] || {};
-  Object.assign(SETTINGS, extension_settings[EXTENSION_NAME]);
-  extension_settings[EXTENSION_NAME] = SETTINGS;
-}
-
-function saveSettings() {
-  extension_settings[EXTENSION_NAME] = SETTINGS;
-  saveSettingsDebounced();
-}
 
 function ensureContainers() {
   let row = document.querySelector("#st-group-trigger-row");
@@ -41,24 +23,17 @@ function ensureContainers() {
   row = document.createElement("div");
   row.id = "st-group-trigger-row";
 
-  const toggle = document.createElement("button");
-  toggle.id = "st-group-trigger-toggle";
-  toggle.className = "menu_button";
-  toggle.type = "button";
-  toggle.title = "Enable/disable Group Trigger Icons extension";
-  toggle.addEventListener("click", () => {
-    SETTINGS.enabled = !SETTINGS.enabled;
-    onEnabledStateChanged();
-    saveSettings();
-  });
-
   const icons = document.createElement("div");
   icons.id = "st-group-trigger-icons";
+  row.appendChild(icons);
 
-  row.append(toggle, icons);
-
-  const parent = anchor.parentElement || anchor;
-  parent.appendChild(row);
+  if (anchor.id === "leftSendFormButtons" || anchor.id === "send_form") {
+    anchor.appendChild(row);
+  } else {
+    const container = anchor.closest("#leftSendFormButtons, #send_form") || anchor.parentElement;
+    if (!container) return null;
+    container.appendChild(row);
+  }
 
   return row;
 }
@@ -85,7 +60,7 @@ function getAvatarUrl(character) {
 
 function createIconButton({ title, label, avatarUrl, clickHandler, className = "" }) {
   const button = document.createElement("button");
-  button.className = `st-group-trigger-icon ${className}`.trim();
+  button.className = `menu_button st-group-trigger-icon ${className}`.trim();
   button.type = "button";
   button.title = title;
   button.setAttribute("aria-label", title);
@@ -149,49 +124,39 @@ function setGroupAutoReply(enabled) {
   const toggle = findAutoReplyToggle();
   if (!toggle) return;
 
+  if (cachedAutoReplyState === null) {
+    cachedAutoReplyState = toggle.checked;
+  }
+
   if (toggle.checked === enabled) return;
   toggle.checked = enabled;
   toggle.dispatchEvent(new Event("input", { bubbles: true }));
   toggle.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-function onEnabledStateChanged() {
-  const row = ensureContainers();
-  const toggle = row?.querySelector("#st-group-trigger-toggle");
-  const icons = row?.querySelector("#st-group-trigger-icons");
-  const isOn = SETTINGS.enabled;
+function restoreAutoReplyState() {
+  if (cachedAutoReplyState === null) return;
 
-  if (toggle) {
-    toggle.textContent = isOn ? "Trigger Icons: ON" : "Trigger Icons: OFF";
-    toggle.classList.toggle("st-group-trigger-toggle-off", !isOn);
-  }
+  const toggle = findAutoReplyToggle();
+  if (!toggle) return;
 
-  if (icons) {
-    icons.style.display = isOn ? "flex" : "none";
-  }
-
-  if (isOn) {
-    const autoToggle = findAutoReplyToggle();
-    if (autoToggle && cachedAutoReplyState === null) {
-      cachedAutoReplyState = autoToggle.checked;
-    }
-    setGroupAutoReply(false);
-  } else {
-    if (cachedAutoReplyState !== null) {
-      setGroupAutoReply(cachedAutoReplyState);
-    } else {
-      setGroupAutoReply(true);
-    }
-  }
+  if (toggle.checked === cachedAutoReplyState) return;
+  toggle.checked = cachedAutoReplyState;
+  toggle.dispatchEvent(new Event("input", { bubbles: true }));
+  toggle.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 function getMemberCharacter(member, allCharacters) {
   if (!Array.isArray(allCharacters)) return null;
 
-  return allCharacters.find((character) => {
-    const options = [character.avatar, character.name, character.id].filter(Boolean).map(String);
-    return options.includes(String(member));
-  }) || null;
+  return (
+    allCharacters.find((character) => {
+      const options = [character.avatar, character.name, character.id]
+        .filter(Boolean)
+        .map(String);
+      return options.includes(String(member));
+    }) || null
+  );
 }
 
 function render() {
@@ -207,6 +172,7 @@ function render() {
   row.style.display = group ? "inline-flex" : "none";
   if (!group) return;
 
+  setGroupAutoReply(false);
   icons.replaceChildren();
 
   icons.appendChild(
@@ -219,7 +185,6 @@ function render() {
   );
 
   const members = Array.isArray(group.members) ? group.members : [];
-
   for (const member of members) {
     const character = getMemberCharacter(member, context.characters);
     const characterName = character?.name || String(member);
@@ -234,8 +199,6 @@ function render() {
       }),
     );
   }
-
-  onEnabledStateChanged();
 }
 
 function registerEvents() {
@@ -253,10 +216,11 @@ function registerEvents() {
   for (const eventName of eventCandidates) {
     eventSource.on(eventName, rerender);
   }
+
+  window.addEventListener("beforeunload", restoreAutoReplyState);
 }
 
 (function init() {
-  loadSettings();
   registerEvents();
   render();
 })();

@@ -3,12 +3,11 @@
 SillyTavern extension that adds clickable group-member icons as shortcuts for `/trigger` in group chats.
 
 ## Features
-- Adds a compact icon row in the top-left chat header area.
+- Adds a compact icon row in the top-left area of the main message bar, to the right of existing message-bar icons.
 - Includes an `All` icon that runs `/trigger` for all members.
 - Adds one circular icon per group member that runs `/trigger <character>`.
-- Includes an extension ON/OFF toggle in the same row.
-- When enabled, forces group auto-replies off.
-- When disabled, restores group auto-replies.
+- Disables group auto-replies while the extension is active in a group chat.
+- Restores the previous auto-reply state when the extension unloads.
 
 ## Installation
 1. In SillyTavern, open **Extensions**.
@@ -19,4 +18,4 @@ SillyTavern extension that adds clickable group-member icons as shortcuts for `/
 - Open a group chat.
 - Click **All** to trigger all characters.
 - Click a character icon to trigger only that character.
-- Click the `Trigger Icons: ON/OFF` button to enable or disable the extension behavior.
+- Enable or disable the extension from SillyTavern's Extensions UI.
