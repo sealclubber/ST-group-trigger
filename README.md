@@ -1,4 +1,5 @@
 # ST-group-trigger
+
 SillyTavern extension that adds clickable group-member icons as shortcuts for `/trigger` in group chats.
 
 ## Features
