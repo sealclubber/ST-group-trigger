@@ -1,5 +1,5 @@
-import { extension_settings, getContext } from "../../extensions.js";
-import { eventSource, event_types, saveSettingsDebounced } from "../../../script.js";
+import { extension_settings, getContext } from "../../../extensions.js";
+import { eventSource, event_types, saveSettingsDebounced } from "../../../../script.js";
 
 const EXTENSION_NAME = "ST-group-trigger";
 const SETTINGS = {
