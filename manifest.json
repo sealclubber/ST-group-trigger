@@ -1,0 +1,11 @@
+{
+  "display_name": "Group Trigger Icons",
+  "loading_order": 10,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "ST-group-trigger contributors",
+  "version": "0.1.0",
+  "homePage": "https://github.com/your-org/ST-group-trigger"
+}
